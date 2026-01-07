@@ -1,0 +1,632 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <!--
+    Anns Ventures - Pink, Girly Shopping Website
+    - Animated intro for brand name
+    - Wears and Drinks sections
+    - Admin dashboard for adding products (images + prices) via localStorage
+    - Mobile-first responsive design
+    - To use your logo: put anns-logo.png in the same folder as index.html
+
+    Tips for future edits:
+    - Colors: see :root CSS variables
+    - Fonts: change Google Fonts links
+    - Categories: update CATEGORY_OPTIONS in JS
+  -->
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Anns Ventures | Shop Wears & Drinks</title>
+
+  <!-- Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@500;700&family=Poppins:wght@300;400;600&display=swap">
+
+  <style>
+    :root{
+      /* Primary palette */
+      --pink-50:#fff5f8;
+      --pink-100:#ffe6ee;
+      --pink-200:#ffc6d8;
+      --pink-300:#ff9fc0;
+      --pink-400:#ff78aa;
+      --pink-500:#ff4f93;
+      --pink-600:#e23a80;
+      --pink-700:#c4286d;
+      --pink-900:#67143a;
+
+      /* Neutrals */
+      --white:#ffffff;
+      --black:#161318;
+      --grey-100:#f7f7f7;
+      --grey-200:#ededed;
+      --grey-400:#bdbdbd;
+      --shadow:0 10px 25px rgba(226,58,128,0.2);
+
+      /* UI */
+      --radius-xl:28px;
+      --radius-lg:20px;
+      --radius-md:12px;
+      --radius-sm:8px;
+    }
+
+    *{box-sizing:border-box}
+    html,body{margin:0;padding:0;background:var(--pink-50);color:var(--black)}
+    body{font-family:"Poppins",system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif;line-height:1.6}
+
+    /* Intro overlay */
+    .intro{
+      position:fixed;inset:0;display:flex;align-items:center;justify-content:center;
+      background:radial-gradient(circle at 30% 20%, var(--pink-100), var(--pink-300));
+      z-index:1000;overflow:hidden;
+    }
+    .intro__brand{
+      display:flex;flex-direction:column;align-items:center;gap:18px;
+      transform:translateY(10px);
+      animation:intro-rise 1.2s ease-out forwards;
+    }
+    @keyframes intro-rise{
+      0%{opacity:0;transform:translateY(40px) scale(0.96)}
+      100%{opacity:1;transform:translateY(0) scale(1)}
+    }
+    .intro__ring{
+      width:180px;height:180px;border-radius:50%;
+      background:conic-gradient(from 180deg, var(--pink-400), var(--pink-200), var(--pink-500), var(--pink-400));
+      filter:saturate(1.1);
+      position:relative;
+      animation:spin 3.8s cubic-bezier(.4,.0,.2,1) infinite;
+      box-shadow:0 0 0 10px rgba(255,255,255,.4) inset, var(--shadow);
+    }
+    @keyframes spin{to{transform:rotate(360deg)}}
+    .intro__name{
+      font-family:"Playfair Display",serif;font-weight:700;
+      font-size:48px;letter-spacing:.02em;color:var(--pink-700);
+      text-shadow:0 6px 20px rgba(196,40,109,.25);
+    }
+    .intro__caption{
+      font-size:14px;color:#7a3f58;background:var(--white);
+      padding:8px 14px;border-radius:999px;box-shadow:var(--shadow);
+    }
+    .intro__fade{
+      position:absolute;inset:0;background:linear-gradient(to bottom, rgba(255,255,255,.0), rgba(255,255,255,.55));
+      animation:shine 1.8s ease-in-out infinite;
+    }
+    @keyframes shine{
+      0%{opacity:.35}50%{opacity:.8}100%{opacity:.35}
+    }
+    .intro__skip{
+      position:absolute;bottom:24px;right:24px;
+      background:var(--white);color:var(--pink-700);border:none;cursor:pointer;
+      padding:10px 14px;border-radius:999px;box-shadow:var(--shadow);font-weight:600;
+    }
+
+    /* App shell */
+    header{
+      position:sticky;top:0;z-index:20;background:rgba(255,255,255,.85);backdrop-filter:saturate(1.1) blur(10px);
+      box-shadow:0 2px 18px rgba(226,58,128,.12);
+    }
+    .nav{
+      max-width:1100px;margin:0 auto;padding:14px 20px;display:flex;align-items:center;gap:16px;
+    }
+    .brand{
+      display:flex;align-items:center;gap:12px;text-decoration:none;color:inherit;
+    }
+    .brand img{
+      width:40px;height:40px;border-radius:12px;object-fit:cover;background:var(--pink-200);box-shadow:var(--shadow)
+    }
+    .brand__title{
+      display:flex;flex-direction:column;line-height:1.2;
+    }
+    .brand__name{font-weight:700;color:var(--pink-700)}
+    .brand__tag{font-size:12px;color:#7a3f58}
+
+    .nav__spacer{flex:1}
+    .nav__links{display:flex;gap:10px;flex-wrap:wrap}
+    .btn{
+      border:none;background:var(--pink-500);color:var(--white);padding:10px 16px;border-radius:999px;cursor:pointer;
+      box-shadow:var(--shadow);font-weight:600
+    }
+    .btn--ghost{background:var(--white);color:var(--pink-700);border:1px solid var(--pink-200)}
+    .btn--outline{background:transparent;color:var(--pink-700);border:1px solid var(--pink-400)}
+    .btn:active{transform:translateY(1px)}
+
+    /* Hero */
+    .hero{
+      max-width:1100px;margin:24px auto;padding:24px;border-radius:var(--radius-xl);
+      background:linear-gradient(120deg, var(--pink-100), var(--pink-200));
+      display:grid;grid-template-columns:1.2fr .8fr;gap:24px;align-items:center;
+    }
+    @media (max-width:850px){.hero{grid-template-columns:1fr}}
+    .hero__content h1{
+      font-family:"Playfair Display",serif;font-weight:700;font-size:38px;color:var(--pink-700);margin:0 0 10px
+    }
+    .hero__content p{color:#7a3f58;margin:0 0 14px}
+    .hero__card{
+      background:var(--white);border-radius:var(--radius-lg);box-shadow:var(--shadow);
+      padding:16px;display:grid;grid-template-columns:1fr 1fr;gap:12px
+    }
+    .hero__card div{
+      background:var(--pink-50);border:1px dashed var(--pink-300);border-radius:var(--radius-md);padding:12px;text-align:center
+    }
+    .hero__card h4{margin:8px 0 2px;color:var(--pink-700)}
+    .hero__card span{font-size:12px;color:#845165}
+
+    /* Section */
+    section{max-width:1100px;margin:24px auto;padding:0 24px}
+    .section__head{display:flex;align-items:center;justify-content:space-between;margin-bottom:10px}
+    .section__title{
+      font-family:"Playfair Display",serif;color:var(--pink-700);font-size:28px;margin:0
+    }
+    .filters{display:flex;gap:8px;flex-wrap:wrap}
+
+    /* Product grid */
+    .grid{
+      display:grid;grid-template-columns:repeat(4,1fr);gap:18px
+    }
+    @media (max-width:1000px){.grid{grid-template-columns:repeat(3,1fr)}}
+    @media (max-width:700px){.grid{grid-template-columns:repeat(2,1fr)}}
+    @media (max-width:450px){.grid{grid-template-columns:1fr}}
+
+    .card{
+      background:var(--white);border-radius:18px;box-shadow:var(--shadow);overflow:hidden;display:flex;flex-direction:column
+    }
+    .card__img{aspect-ratio:1/1;object-fit:cover;width:100%;background:var(--pink-100)}
+    .card__body{padding:12px}
+    .card__title{font-weight:600;color:var(--pink-700)}
+    .card__meta{display:flex;justify-content:space-between;align-items:center;margin-top:6px}
+    .price{font-weight:700;color:var(--pink-600)}
+    .pill{font-size:12px;background:var(--pink-100);border:1px solid var(--pink-300);color:#7a3f58;padding:3px 8px;border-radius:999px}
+
+    /* Drinks highlight */
+    .drinks-banner{
+      background:linear-gradient(90deg, var(--pink-200), var(--pink-400));
+      padding:14px;border-radius:var(--radius-lg);color:var(--white);box-shadow:var(--shadow);margin-bottom:14px
+    }
+
+    /* Admin modal */
+    .modal{
+      position:fixed;inset:0;background:rgba(0,0,0,.35);display:none;align-items:center;justify-content:center;z-index:50
+    }
+    .modal__panel{
+      background:var(--white);max-width:680px;width:92%;border-radius:22px;box-shadow:var(--shadow);
+      padding:16px
+    }
+    .modal__title{font-family:"Playfair Display",serif;color:var(--pink-700);margin:0 0 10px}
+    .form{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+    @media (max-width:650px){.form{grid-template-columns:1fr}}
+    .form label{font-size:13px;color:#7a3f58}
+    .form input, .form select, .form textarea{
+      width:100%;padding:10px;border-radius:12px;border:1px solid var(--pink-200);background:var(--pink-50)
+    }
+    .form textarea{min-height:70px}
+    .modal__actions{display:flex;gap:8px;justify-content:flex-end;margin-top:12px}
+    .admin-list{margin-top:12px;border-top:1px dashed var(--pink-200);padding-top:10px}
+
+    /* Footer */
+    footer{
+      margin-top:40px;background:var(--white);box-shadow:0 -2px 18px rgba(226,58,128,.08);
+    }
+    .footer__inner{max-width:1100px;margin:0 auto;padding:18px 24px;display:flex;gap:16px;align-items:center;justify-content:space-between}
+    .footnote{font-size:12px;color:#7a3f58}
+  </style>
+</head>
+<body>
+  <!-- Intro overlay -->
+  <div class="intro" id="intro">
+    <div class="intro__fade"></div>
+    <div class="intro__brand">
+      <div class="intro__ring" aria-hidden="true"></div>
+      <div class="intro__name">Anns</div>
+      <div class="intro__caption">Welcome to Anns Ventures</div>
+    </div>
+    <button class="intro__skip" id="skipIntro" aria-label="Skip intro">Enter shop</button>
+  </div>
+
+  <!-- Header -->
+  <header>
+    <nav class="nav">
+      <a class="brand" href="#top">
+        <!-- Replace 'anns-logo.png' with your logo filename if needed -->
+        <img src="anns-logo.png" alt="Ann's Ventures logo" />
+        <span class="brand__title">
+          <span class="brand__name">ANN'S VENTURES</span>
+          <span class="brand__tag">Wears & Drinks</span>
+        </span>
+      </a>
+      <div class="nav__spacer"></div>
+      <div class="nav__links">
+        <button class="btn btn--ghost" data-scroll="#wears">Wears</button>
+        <button class="btn btn--ghost" data-scroll="#drinks">Drinks</button>
+        <button class="btn" id="openAdmin">Admin</button>
+      </div>
+    </nav>
+  </header>
+
+  <!-- Hero -->
+  <section class="hero">
+    <div class="hero__content">
+      <h1>Curated looks. Sweet sips. All things Anns.</h1>
+      <p>Clothes, shoes, trousers, gowns, tops — plus our signature Tiger Nut Milk and Zobo. Beautifully yours.</p>
+      <div style="display:flex;gap:8px;margin-top:8px">
+        <button class="btn" data-scroll="#wears">Shop Wears</button>
+        <button class="btn btn--outline" data-scroll="#drinks">Shop Drinks</button>
+      </div>
+    </div>
+    <div class="hero__card">
+      <div>
+        <h4>New Arrivals</h4>
+        <span>Fresh looks weekly</span>
+      </div>
+      <div>
+        <h4>Signature Drinks</h4>
+        <span>Tiger nut & Zobo</span>
+      </div>
+      <div>
+        <h4>Pink Aesthetic</h4>
+        <span>Designed to delight</span>
+      </div>
+      <div>
+        <h4>Mobile Friendly</h4>
+        <span>Shop on the go</span>
+      </div>
+    </div>
+  </section>
+
+  <!-- Wears Section -->
+  <section id="wears">
+    <div class="section__head">
+      <h2 class="section__title">Wears</h2>
+      <div class="filters">
+        <button class="btn btn--outline" data-filter="All">All</button>
+        <button class="btn btn--outline" data-filter="Clothes">Clothes</button>
+        <button class="btn btn--outline" data-filter="Shoes">Shoes</button>
+        <button class="btn btn--outline" data-filter="Trousers">Trousers</button>
+        <button class="btn btn--outline" data-filter="Gowns">Gowns</button>
+        <button class="btn btn--outline" data-filter="Tops">Tops</button>
+      </div>
+    </div>
+    <div class="grid" id="gridWears"></div>
+  </section>
+
+  <!-- Drinks Section -->
+  <section id="drinks">
+    <div class="section__head">
+      <h2 class="section__title">Drinks</h2>
+    </div>
+    <div class="drinks-banner">
+      Pure, refreshing, homemade goodness. Try our Tiger Nut Milk and Zobo today.
+    </div>
+    <div class="grid" id="gridDrinks"></div>
+  </section>
+
+  <!-- Admin Modal -->
+  <div class="modal" id="adminModal" aria-hidden="true" role="dialog" aria-label="Admin dashboard">
+    <div class="modal__panel">
+      <h3 class="modal__title">Admin — Manage Products</h3>
+
+      <form class="form" id="productForm">
+        <!-- Left column -->
+        <div>
+          <label>Product name
+            <input type="text" id="name" placeholder="e.g., Floral Gown" required />
+          </label>
+          <br />
+          <label>Category (Wears)
+            <select id="categoryWears">
+              <option value="">Select if wears</option>
+              <option>Clothes</option>
+              <option>Shoes</option>
+              <option>Trousers</option>
+              <option>Gowns</option>
+              <option>Tops</option>
+            </select>
+          </label>
+          <br />
+          <label>Category (Drinks)
+            <select id="categoryDrinks">
+              <option value="">Select if drinks</option>
+              <option>Tiger Nut Milk</option>
+              <option>Zobo</option>
+            </select>
+          </label>
+          <br />
+          <label>Price (₦)
+            <input type="number" id="price" min="0" step="1" placeholder="e.g., 8500" required />
+          </label>
+          <br />
+          <label>Description
+            <textarea id="description" placeholder="Short details (optional)"></textarea>
+          </label>
+        </div>
+
+        <!-- Right column -->
+        <div>
+          <label>Upload image
+            <input type="file" id="image" accept="image/*" />
+          </label>
+          <div style="margin-top:8px">
+            <img id="preview" alt="Preview" style="width:100%;aspect-ratio:1/1;object-fit:cover;border:1px dashed var(--pink-300);border-radius:12px;background:var(--pink-100)" />
+          </div>
+          <div style="margin-top:8px">
+            <label>
+              <input type="checkbox" id="featured" />
+              Feature this product
+            </label>
+          </div>
+        </div>
+      </form>
+
+      <div class="modal__actions">
+        <button class="btn btn--ghost" id="exportData">Export JSON</button>
+        <button class="btn btn--ghost" id="importData">Import JSON</button>
+        <button class="btn btn--outline" id="clearForm">Clear</button>
+        <button class="btn" id="saveProduct">Save product</button>
+        <button class="btn btn--outline" id="closeAdmin">Close</button>
+      </div>
+
+      <div class="admin-list" id="adminList"></div>
+    </div>
+  </div>
+
+  <!-- Footer -->
+  <footer>
+    <div class="footer__inner">
+      <div class="brand" style="text-decoration:none">
+        <img src="anns-logo.png" alt="Ann's Ventures logo small" />
+        <span class="brand__title">
+          <span class="brand__name">ANN'S VENTURES</span>
+          <span class="brand__tag">Since 2026</span>
+        </span>
+      </div>
+      <div class="footnote">© 2026 Anns Ventures. Made with love in pink.</div>
+    </div>
+  </footer>
+
+  <script>
+    // Smooth scroll
+    document.querySelectorAll("[data-scroll]").forEach(btn=>{
+      btn.addEventListener("click",()=>{
+        const target=document.querySelector(btn.getAttribute("data-scroll"));
+        if(target) target.scrollIntoView({behavior:"smooth",block:"start"});
+      })
+    });
+
+    // Intro handling
+    const intro=document.getElementById("intro");
+    const skipIntro=document.getElementById("skipIntro");
+    const INTRO_SHOWN_KEY="anns_intro_shown";
+    const dismissIntro=()=>{intro.style.opacity="0";setTimeout(()=>intro.style.display="none",350);localStorage.setItem(INTRO_SHOWN_KEY,"1")};
+    skipIntro.addEventListener("click",dismissIntro);
+    window.addEventListener("load",()=>{
+      if(localStorage.getItem(INTRO_SHOWN_KEY)==="1"){dismissIntro()} else {intro.style.display="flex"}
+    });
+
+    // Data model
+    const STORAGE_KEY="anns_products_v1";
+    const CATEGORY_OPTIONS={
+      wears:["Clothes","Shoes","Trousers","Gowns","Tops"],
+      drinks:["Tiger Nut Milk","Zobo"]
+    };
+
+    // Initial sample data for first run
+    const SAMPLE_PRODUCTS=[
+      {id:crypto.randomUUID(),name:"Pink Floral Gown",category:"Gowns",type:"wears",price:18000,featured:true,
+       description:"Light, flowy, and perfect for brunch.",image:"https://images.unsplash.com/photo-1519741491150-1c2f6f5b8074?q=80&w=800&auto=format&fit=crop"},
+      {id:crypto.randomUUID(),name:"Classic White Top",category:"Tops",type:"wears",price:6500,featured:false,
+       description:"Soft cotton with a flattering cut.",image:"https://images.unsplash.com/photo-1512436991641-6745cdb1723f?q=80&w=800&auto=format&fit=crop"},
+      {id:crypto.randomUUID(),name:"Tiger Nut Milk (500ml)",category:"Tiger Nut Milk",type:"drinks",price:1200,featured:true,
+       description:"Creamy, chilled, and naturally sweet.",image:"https://images.unsplash.com/photo-1541976076758-34776718c1eb?q=80&w=800&auto=format&fit=crop"},
+      {id:crypto.randomUUID(),name:"Zobo (500ml)",category:"Zobo",type:"drinks",price:800,featured:false,
+       description:"Refreshing hibiscus drink with a twist.",image:"https://images.unsplash.com/photo-1541976076758-90d28e1bcf90?q=80&w=800&auto=format&fit=crop"}
+    ];
+
+    function getData(){
+      const raw=localStorage.getItem(STORAGE_KEY);
+      if(!raw){
+        localStorage.setItem(STORAGE_KEY,JSON.stringify(SAMPLE_PRODUCTS));
+        return SAMPLE_PRODUCTS;
+      }
+      try{return JSON.parse(raw)}catch(e){return []}
+    }
+    function setData(arr){localStorage.setItem(STORAGE_KEY,JSON.stringify(arr))}
+
+    // Render helpers
+    const gridWears=document.getElementById("gridWears");
+    const gridDrinks=document.getElementById("gridDrinks");
+    const adminList=document.getElementById("adminList");
+
+    function productCard(p){
+      const badge=p.featured?'<span class="pill">Featured</span>':'';
+      return `
+        <article class="card">
+          <img class="card__img" src="${p.image}" alt="${p.name}" />
+          <div class="card__body">
+            <div class="card__title">${p.name}</div>
+            <div class="card__meta">
+              <span class="price">₦${Number(p.price).toLocaleString()}</span>
+              <span class="pill">${p.category}</span>
+            </div>
+            ${p.description?`<div style="margin-top:6px;font-size:12px;color:#845165">${p.description}</div>`:""}
+            <div style="margin-top:10px;display:flex;gap:8px">
+              ${badge}
+              <button class="btn btn--outline" data-id="${p.id}" data-action="delete">Delete</button>
+              <button class="btn btn--ghost" data-id="${p.id}" data-action="edit">Edit</button>
+            </div>
+          </div>
+        </article>
+      `;
+    }
+
+    function render(){
+      const data=getData();
+      const wears=data.filter(p=>p.type==="wears");
+      const drinks=data.filter(p=>p.type==="drinks");
+      gridWears.innerHTML=wears.map(productCard).join("");
+      gridDrinks.innerHTML=drinks.map(productCard).join("");
+      adminList.innerHTML=data.map(p=>`
+        <div style="display:grid;grid-template-columns:60px 1fr auto;gap:10px;align-items:center;margin-bottom:10px">
+          <img src="${p.image}" alt="${p.name}" style="width:60px;height:60px;object-fit:cover;border-radius:8px;background:var(--pink-100)" />
+          <div>
+            <div style="font-weight:600;color:var(--pink-700)">${p.name}</div>
+            <div style="font-size:12px;color:#845165">${p.type.toUpperCase()} • ${p.category} • ₦${Number(p.price).toLocaleString()}</div>
+          </div>
+          <div style="display:flex;gap:8px">
+            <button class="btn btn--outline" data-id="${p.id}" data-action="delete">Delete</button>
+            <button class="btn btn--ghost" data-id="${p.id}" data-action="edit">Edit</button>
+          </div>
+        </div>
+      `).join("");
+    }
+
+    // Filter buttons for wears
+    document.querySelectorAll("#wears .filters .btn").forEach(btn=>{
+      btn.addEventListener("click",()=>{
+        const data=getData().filter(p=>p.type==="wears");
+        const f=btn.getAttribute("data-filter");
+        const filtered=f==="All"?data:data.filter(p=>p.category===f);
+        gridWears.innerHTML=filtered.map(productCard).join("");
+      });
+    });
+
+    // Admin modal open/close
+    const adminModal=document.getElementById("adminModal");
+    const openAdmin=document.getElementById("openAdmin");
+    const closeAdmin=document.getElementById("closeAdmin");
+    openAdmin.addEventListener("click",()=>{adminModal.style.display="flex";adminModal.setAttribute("aria-hidden","false")});
+    closeAdmin.addEventListener("click",()=>{adminModal.style.display="none";adminModal.setAttribute("aria-hidden","true")});
+    adminModal.addEventListener("click",(e)=>{if(e.target===adminModal){closeAdmin.click()}});
+
+    // Form elements
+    const form=document.getElementById("productForm");
+    const nameEl=document.getElementById("name");
+    const categoryWearsEl=document.getElementById("categoryWears");
+    const categoryDrinksEl=document.getElementById("categoryDrinks");
+    const priceEl=document.getElementById("price");
+    const descEl=document.getElementById("description");
+    const imageEl=document.getElementById("image");
+    const previewEl=document.getElementById("preview");
+    const featuredEl=document.getElementById("featured");
+    const saveBtn=document.getElementById("saveProduct");
+    const clearBtn=document.getElementById("clearForm");
+
+    let editingId=null;
+
+    // Image preview & convert to data URL
+    imageEl.addEventListener("change",()=>{
+      const file=imageEl.files?.[0];
+      if(!file){previewEl.src="";return;}
+      const reader=new FileReader();
+      reader.onload=()=>{previewEl.src=reader.result;};
+      reader.readAsDataURL(file);
+    });
+
+    function clearForm(){
+      form.reset();
+      previewEl.src="";
+      categoryWearsEl.value="";
+      categoryDrinksEl.value="";
+      featuredEl.checked=false;
+      editingId=null;
+    }
+    clearBtn.addEventListener("click",clearForm);
+
+    // Save product
+    saveBtn.addEventListener("click",(e)=>{
+      e.preventDefault();
+      const name=nameEl.value.trim();
+      const price=priceEl.value.trim();
+      const wearsCat=categoryWearsEl.value;
+      const drinksCat=categoryDrinksEl.value;
+      const description=descEl.value.trim();
+      const image=previewEl.src || "";
+
+      if(!name || !price || (!wearsCat && !drinksCat)){
+        alert("Please fill name, price, and choose a category (Wears or Drinks).");
+        return;
+      }
+      const type=wearsCat? "wears":"drinks";
+      const category=wearsCat || drinksCat;
+      const data=getData();
+
+      if(editingId){
+        const idx=data.findIndex(p=>p.id===editingId);
+        if(idx>-1){
+          data[idx]={...data[idx],name,price:Number(price),type,category,description,image:image||data[idx].image,featured:featuredEl.checked};
+        }
+        editingId=null;
+      }else{
+        data.push({
+          id:crypto.randomUUID(),
+          name, price:Number(price), type, category, description,
+          image: image || "https://via.placeholder.com/800x800.png?text=Anns+Product",
+          featured: featuredEl.checked
+        });
+      }
+      setData(data);
+      render();
+      clearForm();
+      alert("Product saved!");
+    });
+
+    // Edit/Delete actions
+    document.body.addEventListener("click",(e)=>{
+      const btn=e.target.closest("button");
+      if(!btn) return;
+      const action=btn.getAttribute("data-action");
+      const id=btn.getAttribute("data-id");
+      if(!action || !id) return;
+
+      const data=getData();
+      const item=data.find(p=>p.id===id);
+
+      if(action==="delete"){
+        const ok=confirm(`Delete "${item?.name}"?`);
+        if(ok){setData(data.filter(p=>p.id!==id));render();}
+      }
+      if(action==="edit" && item){
+        openAdmin.click();
+        editingId=id;
+        nameEl.value=item.name;
+        priceEl.value=item.price;
+        descEl.value=item.description||"";
+        featuredEl.checked=!!item.featured;
+        previewEl.src=item.image||"";
+        if(item.type==="wears"){categoryWearsEl.value=item.category;categoryDrinksEl.value=""}
+        else{categoryWearsEl.value="";categoryDrinksEl.value=item.category}
+      }
+    });
+
+    // Export/Import JSON
+    const exportBtn=document.getElementById("exportData");
+    const importBtn=document.getElementById("importData");
+    exportBtn.addEventListener("click",()=>{
+      const blob=new Blob([JSON.stringify(getData(),null,2)],{type:"application/json"});
+      const url=URL.createObjectURL(blob);
+      const a=document.createElement("a");
+      a.href=url;a.download="anns-products.json";a.click();
+      URL.revokeObjectURL(url);
+    });
+    importBtn.addEventListener("click",()=>{
+      const input=document.createElement("input");
+      input.type="file";input.accept="application/json";
+      input.onchange=()=>{
+        const file=input.files?.[0]; if(!file) return;
+        const reader=new FileReader();
+        reader.onload=()=>{
+          try{
+            const imported=JSON.parse(reader.result);
+            if(Array.isArray(imported)){
+              setData(imported);render();alert("Imported successfully.");
+            }else{alert("Invalid JSON format.");}
+          }catch{alert("Could not parse JSON.");}
+        };
+        reader.readAsText(file);
+      };
+      input.click();
+    });
+
+    // Initial render
+    render();
+  </script>
+</body>
+  </html>
